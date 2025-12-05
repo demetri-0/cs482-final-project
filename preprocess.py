@@ -1,6 +1,6 @@
 import pandas as pd
 import preprocess_helper as ph
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -22,13 +22,14 @@ def build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
     categorical_features = X.select_dtypes(include=["object"]).columns
     numeric_features = X.select_dtypes(include=["number"]).columns 
 
-    categorical_transformer = make_pipeline(
+    # FIXED: make_pipeline DOES NOT accept named steps.
+    categorical_transformer = Pipeline([
         ("encoder", OneHotEncoder(handle_unknown="ignore"))
-    )
+    ])
 
-    numeric_transformer = make_pipeline(
+    numeric_transformer = Pipeline([
         ("scaler", StandardScaler())
-    )
+    ])
 
     preprocessor = ColumnTransformer(
         transformers=[
