@@ -1,5 +1,56 @@
 import pandas as pd
+from dython.nominal import associations
 
+# drops features deemed to be leaky from the data
+def drop_leaky_columns(raw_data: pd.DataFrame):
+
+    leaky_column_names = [
+        "injuries_total",
+        "injuries_fatal",
+        "injuries_incapacitating",
+        "injuries_non_incapacitating",
+        "injuries_reported_not_evident",
+        "injuries_no_indication",
+        "crash_type",
+        "damage"
+    ]
+
+    raw_data.drop(columns=leaky_column_names, axis=1, inplace=True)
+
+# drops features deemed to be identifiers from the data
+def drop_identifier_columns(raw_data: pd.DataFrame):
+
+    identifier_columns = [
+        "crash_date"
+    ]
+
+    raw_data.drop(columns=identifier_columns, axis=1, inplace=True)
+
+# performs an association analysis on the data, dropping features with too strong of an association
+def association_analysis(raw_data: pd.DataFrame):
+    raw_data = raw_data.drop(columns=["most_severe_injury"], axis=1) # drop target column
+    cat_cols = raw_data.select_dtypes(include=['object']).columns # obtain categorical columns
+
+    # create association matrix
+    assoc_matrix = associations(
+        raw_data[cat_cols],
+        plot=False
+    )['corr']
+
+    # iterate through association matrix, adding the first feature of a pair with strong association to a set that will be dropped from the data
+    columns = assoc_matrix.columns
+    cols_to_drop = set()
+    for i in range(0, len(columns)):
+        for j in range(i + 1, len(columns)):
+            value = assoc_matrix.iloc[i, j]
+            if value > 0.75:
+                cols_to_drop.add(columns[i])
+
+    # drop features with a strong association
+    for col in cols_to_drop:
+        raw_data = raw_data.drop(columns=[col], axis=1)
+
+# based on a designated mapping for certain categorical features, combine categories into existing or new categories
 def combine_categories(raw_data: pd.DataFrame):
 
     traffic_device_mapping = {
@@ -61,7 +112,7 @@ def combine_categories(raw_data: pd.DataFrame):
         "TEXTING": "DISTRACTION",
 
         "UNDER THE INFLUENCE OF ALCOHOL/DRUGS (USE WHEN ARREST IS EFFECTED)": "SUBSTANCE IMPAIREMENT",
-        "HAD BEEN DRINKING (USE WHEN ARREST IS NOT MADE)": "SUBSTANCE IMPAIREMMENT",
+        "HAD BEEN DRINKING (USE WHEN ARREST IS NOT MADE)": "SUBSTANCE IMPAIREMENT",
 
         "VISION OBSCURED (SIGNS, TREE LIMBS, BUILDINGS, ETC.)": "NONSUBSTANCE/DRIVER IMPAIREMENT",
         "EQUIPMENT - VEHICLE CONDITION": "NONSUBSTANCE/DRIVER IMPAIREMENT",
@@ -86,29 +137,7 @@ def combine_categories(raw_data: pd.DataFrame):
     }
     raw_data["most_severe_injury"] = raw_data["most_severe_injury"].replace(injury_mapping)
 
-def drop_leaky_columns(raw_data: pd.DataFrame):
-
-    leaky_column_names = [
-        "injuries_total",
-        "injuries_fatal",
-        "injuries_incapacitating",
-        "injuries_non_incapacitating",
-        "injuries_reported_not_evident",
-        "injuries_no_indication",
-        "crash_type",
-        "damage"
-    ]
-
-    raw_data.drop(columns=leaky_column_names, axis=1, inplace=True)
-
-def drop_identifier_columns(raw_data: pd.DataFrame):
-
-    identifier_columns = [
-        "crash_date"
-    ]
-
-    raw_data.drop(columns=identifier_columns, axis=1, inplace=True)
-
+# after the target column has been consolidated, values are mapped to numbers and the target is renamed
 def build_target(raw_data: pd.DataFrame):
 
     target_mapping = {
