@@ -3,24 +3,18 @@ from sklearn.model_selection import train_test_split
 from preprocess import preprocess_data, build_preprocessor
 from sklearn.pipeline import Pipeline
 
-# ======================================================
-# 1. LOAD RAW DATA
-# ======================================================
+# Load raw data
 
 raw_data = pd.read_csv("traffic_accidents.csv")
 prepped_data = preprocess_data(raw_data)
 
-# ======================================================
-# 2. OPTIONAL: DOWNSAMPLE DATASET FOR PERFORMANCE
-# ======================================================
+# Downsample dataset to 10%
 
 DOWNSAMPLE_FRACTION = 0.10    
 prepped_data = prepped_data.sample(frac=DOWNSAMPLE_FRACTION, random_state=42)
 print(f"Dataset downsampled to {len(prepped_data)} rows.")
 
-# ======================================================
-# 3. EXACT 70/15/15 SPLIT
-# ======================================================
+# 70/15/15 split
 
 X = prepped_data.drop(columns=["injury_severity"], axis=1)
 y = prepped_data["injury_severity"]
@@ -47,9 +41,7 @@ X_train, X_val, y_train, y_val = train_test_split(
     random_state=42
 )
 
-# ======================================================
-# 4. BUILD PREPROCESSOR
-# ======================================================
+# Pre-Processor Build
 
 preprocessor = build_preprocessor(X_train)
 
@@ -60,15 +52,11 @@ model = Pipeline(
     ]
 )
 
-# ======================================================
-# 5. IMPORT MODELING PIPELINE
-# ======================================================
+# Modeling pipeline
 
 from models import train_and_evaluate_all_models
 
-# ======================================================
-# 6. RUN MODEL TRAINING + EVALUATION
-# ======================================================
+# Model training + eval
 
 best_model, test_metrics = train_and_evaluate_all_models(
     X_train,
@@ -80,9 +68,7 @@ best_model, test_metrics = train_and_evaluate_all_models(
     preprocessor=preprocessor
 )
 
-# ----------------------------------------
-# CLEAN, READABLE SUMMARY OUTPUT
-# ----------------------------------------
+# Summary output
 print("\n================ FINAL RESULTS ================\n")
 
 # Extract simple name
